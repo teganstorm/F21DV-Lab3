@@ -18,7 +18,7 @@
 		button {
 			font-family: Trebuchet MS;
 			border: 2px solid black;
-			width: 100px;
+			width: 125px;
 			height: 25px;
 			background-color: lavender;
 			color: black;
@@ -29,6 +29,15 @@
 	</style>
 	<button onclick="window.location.href='index.html'">Back</button>
 	<h1>Evolution of COVID-19 over continents and specific countries.</h1>
+    <div>
+        <button onclick="display('Asia')">Asia</button>
+        <button onclick="display('Africa')">Africa</button>
+        <button onclick="display('Europe')">Europe</button>
+        <button onclick="display('Oceania')">Oceania</button>
+        <button onclick="display('South America')">South America</button>
+        <button onclick="display('North America')">North America</button>
+    </div>
+    <p></p>
 	<script>
 		// write your d3 code here..
     /*
@@ -101,6 +110,13 @@
     excess_mortality
     excess_mortality_cumulative_per_million
     */
+
+
+    // working with dates 
+    // http://using-d3js.com/04_04_working_with_dates.html 
+
+
+
     var datalink = "https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv";
 
 
@@ -115,19 +131,87 @@
         .attr("width", xSize)
         .attr("height", ySize)
         .style("border", "2px solid black")
-
+        .append("g")
+        .attr("transform", "translate("+margin+","+margin+")");
+    var x = d3.scaleTime()
+        .domain(0,0)
+        .range([0, xmax])
+    svg.append("g")
+        .attr("transform", "translate(0,"+ymax+")")
+        .call(d3.axisBottom(x))
+        .attr('class', 'xaxis');
+    var y = d3.scaleLinear()
+        .domain([0, 0])
+        .range([0, ymax])
+    svg.append("g")
+        .call(d3.axisLeft(y))
+        .attr('class', 'yaxis');
+    var da = [
+        {x:new Date(0-0-0), y:0}
+    ];
+    var line = svg.append("g").append("path")
+        .attr('class', 'line')
+        .datum(da)
+        .attr("fill", "none")
+        .attr("stroke-width", 1.5)
+        .attr("d", d3.line()
+            .x(function(d) { return x(d.x) })
+            .y(function(d) { return y(d.y) })
+        ).attr("stroke", "black");
+    
     function display(c) {
       d3.csv(datalink).then(function(data) {
-        var newdata = []
-        for (var i=0; i<data.length; i++) {
-          if (data[i].continent == c) {
-            newdata.append(data[i])
+          var newdata = []
+          var datalength = data.length;
+          
+          var body = d3.selectAll("body");
+          for (var i=0; i<datalength; i++) {
+              if (data[i].continent == c) {
+                  newdata.push(data[i])
+              }
           }
-        }
-        console.log(newdata.length)
+          var dates = []
+          var new_cases = []
+          var newdatalength = newdata.length;
+          for (var i=0; i<newdatalength; i++) {
+              var d = newdata[i].date;
+              var new_case = newdata[i].new_cases;
+              var date = new Date(d)
+              dates.push(date)
+              new_cases.push(new_case)
+          }
+
+          var mincase = Math.min(...new_cases);
+          var maxcase = Math.max(...new_cases);
+          var maxDate = new Date(Math.max.apply(Math, dates));
+          var minDate = new Date(Math.min.apply(Math, dates));
+          
+          var xaxis = d3.selectAll(".xaxis");
+          var yaxis = d3.selectAll(".yaxis");
+          x.domain([minDate, maxDate]);
+          xaxis.transition().call(d3.axisBottom(x).ticks(d3.timeYear)) 
+          y.domain([maxcase, mincase])
+          yaxis.transition().call(d3.axisLeft(y)) 
+    
+          for (var i=0; i<newdatalength; i++) {
+              var dict = {}
+              dict.x = dates[i]
+              dict.y = new_cases[i]
+              newdata[i] = dict;
+          }
+
+          newpath = d3.selectAll(".line")
+            .datum(newdata)
+            .transition()
+            .attr("d", d3.line().x(function(d,i) {
+                return x(d.x);
+            }).y(function(d,i) {
+                return y(d.y);
+            }))
 
       })
     }
+    display("Asia")
 	</script>
 </body>
 
