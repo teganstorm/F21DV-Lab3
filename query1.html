@@ -161,6 +161,7 @@
     
     function display(c) {
       d3.csv(datalink).then(function(data) {
+          data.sort(function (a,b) {return d3.ascending(a.date, b.date);});
           var newdata = []
           var datalength = data.length;
           
@@ -176,6 +177,10 @@
           for (var i=0; i<newdatalength; i++) {
               var d = newdata[i].date;
               var new_case = newdata[i].new_cases;
+              if (new_case<0) {
+                  // error correction
+                  new_case = new_case*-1;
+              }
               var date = new Date(d)
               dates.push(date)
               new_cases.push(new_case)
