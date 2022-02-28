@@ -20,12 +20,15 @@
 			border: 2px solid black;
 			width: 100px;
 			height: 25px;
-      background-color: lavender;
-      color: black;
+			background-color: lavender;
+			color: black;
 		}
+    div {
+      text-align: center;
+    }
 	</style>
 	<button onclick="window.location.href='index.html'">Back</button>
-  <h1>Evolution of COVID-19 over continents and specific countries.</h1>
+	<h1>Evolution of COVID-19 over continents and specific countries.</h1>
 	<script>
 		// write your d3 code here..
     /*
@@ -99,9 +102,32 @@
     excess_mortality_cumulative_per_million
     */
     var datalink = "https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv";
-	  d3.csv(datalink).then(function(d) {
-      // do some stuff here
-    })
+
+
+      var xSize = 600;
+      var ySize = 600;
+      var margin = 100;
+      var xmax = xSize-margin*2;
+      var ymax = ySize-margin*2;
+
+      var div = d3.selectAll("body").append("div")
+      var svg = div.append("svg")
+        .attr("width", xSize)
+        .attr("height", ySize)
+        .style("border", "2px solid black")
+
+    function display(c) {
+      d3.csv(datalink).then(function(data) {
+        var newdata = []
+        for (var i=0; i<data.length; i++) {
+          if (data[i].continent == c) {
+            newdata.append(data[i])
+          }
+        }
+        console.log(newdata.length)
+
+      })
+    }
 	</script>
 </body>
 
