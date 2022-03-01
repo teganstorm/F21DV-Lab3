@@ -7,7 +7,7 @@
 
 <body>
 	<style>
-		h1,
+		h1,h2,
 		h3,
 		h4,
 		p {
@@ -22,6 +22,7 @@
 			height: 25px;
 			background-color: lavender;
 			color: black;
+            margin: 4px;
 		}
     div {
       text-align: center;
@@ -29,6 +30,8 @@
 	</style>
 	<button onclick="window.location.href='index.html'">Back</button>
 	<h1>Evolution of COVID-19 over continents and specific countries.</h1>
+    <p></p>
+    <h2>Evolution of COVID-19 over continents in the World:</h2>
     <div>
         <button id="asiaButton" onclick="display('Asia')">Asia</button>
         <button id="africaButton" onclick="display('Africa')">Africa</button>
@@ -149,7 +152,7 @@
     var da = [
         {x:new Date(0-0-0), y:0}
     ];
-    var line = svg.append("g").append("path")
+    var line = svg.append("path")
         .attr('class', 'line')
         .datum(da)
         .attr("fill", "none")
@@ -157,9 +160,12 @@
         .attr("d", d3.line()
             .x(function(d) { return x(d.x) })
             .y(function(d) { return y(d.y) })
-        ).attr("stroke", "purple");
+        ).attr("stroke", "lavender");
     
     function display(c) {
+      d3.selectAll('.newdiv').remove()
+      d3.selectAll(".newline").remove()
+
       var asiabutton = document.getElementById("asiaButton");
       var africabutton = document.getElementById("africaButton");
       var europebutton = document.getElementById("europeButton");
@@ -216,6 +222,7 @@
           data.sort(function (a,b) {return d3.ascending(a.date, b.date);});
           var newdata = []
           var datalength = data.length;
+          var countries_in_continent = []
           
           var body = d3.selectAll("body");
           for (var i=0; i<datalength; i++) {
@@ -227,6 +234,7 @@
           var new_cases = []
           var newdatalength = newdata.length;
           for (var i=0; i<newdatalength; i++) {
+              var iso = newdata[i].iso_code;
               var d = newdata[i].date;
               var new_case = newdata[i].new_cases;
               if (new_case<0) {
@@ -236,6 +244,7 @@
               var date = new Date(d)
               dates.push(date)
               new_cases.push(new_case)
+              countries_in_continent.push(iso)
           }
 
           var mincase = Math.min(...new_cases);
@@ -254,17 +263,61 @@
               var dict = {}
               dict.x = dates[i]
               dict.y = new_cases[i]
-              newdata[i] = dict;
+              data[i] = dict;
           }
 
           newpath = d3.selectAll(".line")
-            .datum(newdata)
+            .datum(data)
             .transition()
             .attr("d", d3.line().x(function(d,i) {
                 return x(d.x);
             }).y(function(d,i) {
                 return y(d.y);
             }))
+
+            countries_in_continent = [...new Set(countries_in_continent)]
+            var countrieslen = countries_in_continent.length
+            var newdiv = d3.selectAll("body").append("div").attr("class", "newdiv");
+            newdiv.append("h2").text("Evolution of COVID-19 over countries in "+c+": ");
+            var buttons = []
+            for (let i=0; i<countrieslen; i++) {
+                var b = newdiv.append("button").text(countries_in_continent[i])
+                buttons.push(b);
+                b.on("click", function() {
+                    showline(this)
+                })
+            }
+
+            function showline(button) {
+                d3.selectAll(".newline").remove()
+                for (var i=0; i<buttons.length; i++) {
+                    var b = buttons[i];
+                    b.style("background-color","lavender");
+                }
+                button.style.backgroundColor = "purple";
+                var country = button.innerHTML;
+                var newlinedata = [];
+                for (var i=0; i<newdatalength; i++) {
+                    if (newdata[i].iso_code == country) {
+                        var dict = {}
+                        dict.x = new Date(newdata[i].date);
+                        dict.y = newdata[i].new_cases;
+                        newlinedata.push(dict);
+                    }
+                }
+                
+                var newline = svg.append("path")
+                    .datum(newlinedata)
+                    .attr("fill", "none")
+                    .attr("stroke-width", 1.5)
+                    .attr("d", d3.line()
+                        .x(function(d) { 
+                            return x(d.x) })
+                        .y(function(d) { 
+                            return y(d.y) }))
+                    .attr("stroke", "purple")
+                    .attr("class", "newline");
+            }
 
       })
     }
