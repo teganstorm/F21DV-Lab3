@@ -30,8 +30,9 @@
 	<button onclick="window.location.href='index.html'">Back</button>
 	<h1>Is there a relationship between the relative 'wealth' of a population and the evolution of the pandemic?</h1>
     <div>
-        <button id="casesButton" onclick="display('New Cases')">New Cases</button>
-        <button id="deathsButton" onclick="display('New Deaths')">New Deaths</button>
+        <button id="2020Button" onclick="display(2020)">2020</button>
+        <button id="2021Button" onclick="display(2021)">2021</button>
+        <button id="2022Button" onclick="display(2022)">2022</button>
     </div>
     <p></p>
 	<script>
@@ -115,109 +116,107 @@
 
     var datalink = "https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv";
 
+    d3.csv(datalink).then(function(data) {
+        // make a list of dicts of the total gdp and covid cases per million
+        var continents = ["Asia", "Africa", "Europe", "Oceania", "South America", "North America"]
+        var list_of_dicts = []
+        for (var i=0; i<continents.length; i++) {
+            var dict = {};
+            dict.continent = continents[i];
+            dict.gdp = 0;
+            dict.cases = 0;
+            var counter = 0;
+            for (var j=0; j<data.length; j++) {
+                if (data[j].continent == continents[i]) {
+                    if (data[j].gdp_per_capita && data[j].new_cases){
+                        dict.gdp = dict.gdp + parseInt(data[j].gdp_per_capita)
+                        dict.cases = dict.cases + parseInt(data[j].new_cases)
+                        counter = counter + 1;
+                    }
+                }
+            }
+            dict.gdp = dict.gdp/counter
+            dict.cases = dict.cases/counter
+            list_of_dicts.push(dict)
+        }
+        list_of_dicts.sort(function (a,b) {return d3.ascending(a.gdp, b.gdp);});
 
-      var xSize = 600;
-      var ySize = 600;
-      var margin = 100;
-      var xmax = xSize-margin*2;
-      var ymax = ySize-margin*2;
+        // get max y axis
+        var maxy = list_of_dicts[0].gdp;
+        for (var i=0; i<list_of_dicts.length; i++) {
+            if (list_of_dicts[i].gdp>maxy) {
+                maxy = list_of_dicts[i].gdp;
+            }
+            if (list_of_dicts[i].cases>maxy) {
+                maxy = list_of_dicts[i].cases;
+            }
+        }
+        
+        // get the ordered continents (ordered by gdp)
+        continents = d3.map(list_of_dicts, function(d){return(d.continent)})
 
-      var div = d3.selectAll("body").append("div")
-      var svg = div.append("svg")
+        // make the svg and graph stuff 
+        var xSize = 600;
+        var ySize = 600;
+        var margin = 100;
+        var xmax = xSize-margin*2;
+        var ymax = ySize-margin*2;
+
+        var div = d3.selectAll("body").append("div")
+        var svg = div.append("svg")
         .attr("width", xSize)
         .attr("height", ySize)
         .style("border", "2px solid black")
         .append("g")
         .attr("transform", "translate("+margin+","+margin+")");
 
-    var x = d3.scaleLinear()
-        .domain([0,0])
-        .range([0, xmax])
-    svg.append("g")
+        var x = d3.scaleBand()
+        .domain(list_of_dicts.map(function(d) {
+        return d.continent;
+        })).padding(0.2).range([0, xmax])
+
+
+        svg.append("g")
         .attr("transform", "translate(0,"+ymax+")")
         .call(d3.axisBottom(x))
         .attr('class', 'xaxis');
 
-    var y = d3.scaleLinear()
-        .domain([0, 0])
+        var y = d3.scaleLinear()
+        .domain([maxy, 0])
         .range([0, ymax])
-    svg.append("g")
+
+        svg.append("g")
         .call(d3.axisLeft(y))
         .attr('class', 'yaxis');
-    var da = [
-        {x:0, y:0}
-    ];
-    var line = svg.append("g").append("path")
-        .attr('class', 'line')
-        .datum(da)
-        .attr("fill", "none")
-        .attr("stroke-width", 1.5)
-        .attr("d", d3.line()
-            .x(function(d) { return x(d.x) })
-            .y(function(d) { return y(d.y) })
-        ).attr("stroke", "purple");
-        
 
-    function display(c) {
-      var casesbutton = document.getElementById("casesButton");
-      var deathsbutton = document.getElementById("deathsButton");
+        svg.append("text")
+        .attr("x", xSize/2-50)
+        .attr("y", ymax+40)
+        .attr("text-anchor", "end")
+        .text("Continents")
+        .style("font-family", "Trebuchet MS")
 
-      if (c == "New Cases") {
-          casesbutton.style.backgroundColor = "purple";
-          deathsbutton.style.backgroundColor = "lavender";
+        svg.append("text")
+        .attr("x", -xmax/2+100)
+        .attr("y", -55)
+        .attr("text-anchor", "end")
+        .attr("transform", "rotate(-90)")
+        .text("New COVID-19 Cases/Vaccinations")
+        .style("font-family", "Trebuchet MS")
 
-      } else if (c == "New Deaths") {
-          casesbutton.style.backgroundColor = "lavender";
-          deathsbutton.style.backgroundColor = "purple";
-      } 
-      d3.csv(datalink).then(function(data) {
-          data.sort(function (a,b) {return d3.ascending(a.gdp_per_capita, b.gdp_per_capita);});
-          var gdps = []
-          var yaxis_data = []
-          var datalength = data.length;
-          for (var i=0; i<datalength; i++) {
-              var gdp = data[i].gdp_per_capita;
-              var yaxis_d = 0 
-              if (c == "New Cases") {yaxis_d = data[i].new_cases_per_million; }
-              else if (c == "New Deaths") {yaxis_d = data[i].new_deaths_per_million;}
-              // filter out missing data
-              if (yaxis_d<0) {
-                yaxis_d = yaxis_d*-1;
-              }
-              if (gdp && yaxis_d) {
-                gdps.push(gdp)
-                yaxis_data.push(yaxis_d)
-              }
-          }
-         
-          var mingdp = Math.min.apply(Math, gdps);
-          var maxgdp = Math.max.apply(Math, gdps);
-          var miny = Math.min.apply(Math, yaxis_data);
-          var maxy = Math.max.apply(Math, yaxis_data);
-          
-          var xaxis = d3.selectAll(".xaxis");
-          var yaxis = d3.selectAll(".yaxis");
-          x.domain([mingdp, maxgdp]);
-          xaxis.transition().call(d3.axisBottom(x)) 
-          y.domain([maxy, miny])
-          yaxis.transition().call(d3.axisLeft(y)) 
-          for (var i=0; i<datalength; i++) {
-              var dict = {}
-              dict.x = gdps[i]
-              dict.y = yaxis_data[i]
-              data[i] = dict;
-          }
+        svg.selectAll("rect") 
+        .data(list_of_dicts)
+        .append("rect") 
+        .attr('class', 'bars')
+        .attr("x", function(d) { return x(d.continent); })
+        .attr("y", function(d) { return y(d.gdp); }) 
+        .attr("width", x.bandwidth())
+        .attr("height", function(d) { return y(d.gdp); }) 
+        .style("fill", "purple")
 
-          newpath = d3.selectAll(".line")
-            .datum(data)
-            .transition()
-            .attr("d", d3.line().x(function(d,i) {
-                return x(d.x);
-            }).y(function(d,i) {
-                return y(d.y);
-            }))
-      })
-    }
+    })
+
+    
 	</script>
 </body>
 
