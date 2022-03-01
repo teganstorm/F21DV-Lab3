@@ -161,7 +161,21 @@
             .x(function(d) { return x(d.x) })
             .y(function(d) { return y(d.y) })
         ).attr("stroke", "lavender");
-    
+    svg.append("text")
+        .attr("x", xSize/2-50)
+        .attr("y", ymax+40)
+        .attr("text-anchor", "end")
+        .text("Timeline")
+        .style("font-family", "Trebuchet MS")
+
+    svg.append("text")
+        .attr("x", -xmax/2+100)
+        .attr("y", -55)
+        .attr("text-anchor", "end")
+        .attr("transform", "rotate(-90)")
+        .text("New COVID-19 Cases")
+        .style("font-family", "Trebuchet MS")
+        
     function display(c) {
       d3.selectAll('.newdiv').remove()
       d3.selectAll(".newline").remove()
