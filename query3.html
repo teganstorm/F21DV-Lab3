@@ -7,7 +7,7 @@
 
 <body>
 	<style>
-		h1,
+		h1,h2,
 		h3,
 		h4,
 		p {
@@ -22,6 +22,7 @@
 			height: 25px;
 			background-color: lavender;
 			color: black;
+            margin: 4px;
 		}
     div {
       text-align: center;
@@ -29,10 +30,6 @@
 	</style>
 	<button onclick="window.location.href='index.html'">Back</button>
 	<h1>Effect of vaccinations and booster jabs on the spread of cases/deaths.</h1>
-    <div>
-        <button id="casesButton" onclick="display('New Cases')">New Cases</button>
-        <button id="deathsButton" onclick="display('New Deaths')">New Deaths</button>
-    </div>
     <p></p>
 	<script>
 		// write your d3 code here..
@@ -115,109 +112,119 @@
 
     var datalink = "https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv";
 
+    d3.csv(datalink).then(function(data) {
 
-      var xSize = 600;
-      var ySize = 600;
-      var margin = 100;
-      var xmax = xSize-margin*2;
-      var ymax = ySize-margin*2;
+        // get list of unique countries
+        var countries = [] 
+        for (var i=0; i<data.length; i++) {
+            var iso = data[i].iso_code;
+            countries.push(iso)
+        }
+        countries = [...new Set(countries)]
 
-      var div = d3.selectAll("body").append("div")
-      var svg = div.append("svg")
-        .attr("width", xSize)
-        .attr("height", ySize)
-        .style("border", "2px solid black")
-        .append("g")
-        .attr("transform", "translate("+margin+","+margin+")");
+        // make a list of dicts of total vaccinations and cases for each country
+        var list_of_dicts = []
+        for (var i =0; i<countries.length; i++) {
+            var dict = {};
+            dict.iso = countries[i]
+            dict.cases = 0;
+            dict.vaccinations = 0;
 
-    var x = d3.scaleLinear()
-        .domain([0,0])
-        .range([0, xmax])
-    svg.append("g")
-        .attr("transform", "translate(0,"+ymax+")")
-        .call(d3.axisBottom(x))
-        .attr('class', 'xaxis');
+            for (var j=0; j<data.length; j++) {
+                if (data[j].iso_code == countries[i]) {
+                    var vaccinations = parseInt(data[j].new_vaccinations)
+                    var cases = parseInt(data[j].new_cases)
+                    if (vaccinations && cases) {
+                        dict.cases = dict.cases + cases;
+                        dict.vaccinations = dict.vaccinations + vaccinations;
+                    }
+                }
+            }
 
-    var y = d3.scaleLinear()
-        .domain([0, 0])
-        .range([0, ymax])
-    svg.append("g")
-        .call(d3.axisLeft(y))
-        .attr('class', 'yaxis');
-    var da = [
-        {x:0, y:0}
-    ];
-    var line = svg.append("g").append("path")
-        .attr('class', 'line')
-        .datum(da)
-        .attr("fill", "none")
-        .attr("stroke-width", 1.5)
-        .attr("d", d3.line()
-            .x(function(d) { return x(d.x) })
-            .y(function(d) { return y(d.y) })
-        ).attr("stroke", "purple");
-        
+            list_of_dicts.push(dict)
+        }
 
-    function display(c) {
-      var casesbutton = document.getElementById("casesButton");
-      var deathsbutton = document.getElementById("deathsButton");
+        // get the max and min for x and y axis
+        var maxCases = list_of_dicts[0].cases;
+        var minCases = list_of_dicts[0].cases;
+        var maxVaccinations = list_of_dicts[0].vaccinations;
+        var minVaccination = list_of_dicts[0].vaccinations;
+        for (var i=0; i<list_of_dicts.length; i++) {
+            var curcase = list_of_dicts[i].cases;
+            if (curcase<minCases) {
+                minCases = curcase;
+            }
+            if (curcase>maxCases) {
+                maxCases = curcase
+            }
+            var curvac = list_of_dicts[i].vaccinations;
+            if (curvac<minVaccination) {
+                minVaccination = curvac;
+            }
+            if (curvac>maxVaccinations) {
+                maxVaccinations = curvac
+            }
+        }
 
-      if (c == "New Cases") {
-          casesbutton.style.backgroundColor = "purple";
-          deathsbutton.style.backgroundColor = "lavender";
+        var xSize = 600;
+        var ySize = 600;
+        var margin = 100;
+        var xmax = xSize-margin*2;
+        var ymax = ySize-margin*2;
 
-      } else if (c == "New Deaths") {
-          casesbutton.style.backgroundColor = "lavender";
-          deathsbutton.style.backgroundColor = "purple";
-      } 
-      d3.csv(datalink).then(function(data) {
-          data.sort(function (a,b) {return d3.ascending(a.new_vaccinations, b.new_vaccinations);});
-          var gdps = []
-          var yaxis_data = []
-          var datalength = data.length;
-          for (var i=0; i<datalength; i++) {
-              var gdp = data[i].new_vaccinations;
-              var yaxis_d = 0 
-              if (c == "New Cases") {yaxis_d = data[i].new_cases_per_million; }
-              else if (c == "New Deaths") {yaxis_d = data[i].new_deaths_per_million;}
-              // filter out missing data
-              if (yaxis_d<0) {
-                yaxis_d = yaxis_d*-1;
-              }
-              if (gdp && yaxis_d) {
-                gdps.push(gdp)
-                yaxis_data.push(yaxis_d)
-              }
-          }
-         
-          var mingdp = Math.min.apply(Math, gdps);
-          var maxgdp = Math.max.apply(Math, gdps);
-          var miny = Math.min.apply(Math, yaxis_data);
-          var maxy = Math.max.apply(Math, yaxis_data);
-          
-          var xaxis = d3.selectAll(".xaxis");
-          var yaxis = d3.selectAll(".yaxis");
-          x.domain([mingdp, maxgdp]);
-          xaxis.transition().call(d3.axisBottom(x)) 
-          y.domain([maxy, miny])
-          yaxis.transition().call(d3.axisLeft(y)) 
-          for (var i=0; i<datalength; i++) {
-              var dict = {}
-              dict.x = gdps[i]
-              dict.y = yaxis_data[i]
-              data[i] = dict;
-          }
+        var div = d3.selectAll("body").append("div")
+        var svg = div.append("svg")
+            .attr("width", xSize)
+            .attr("height", ySize)
+            .style("border", "2px solid black")
+            .append("g")
+            .attr("transform", "translate("+margin+","+margin+")");
 
-          newpath = d3.selectAll(".line")
-            .datum(data)
-            .transition()
-            .attr("d", d3.line().x(function(d,i) {
-                return x(d.x);
-            }).y(function(d,i) {
-                return y(d.y);
-            }))
-      })
-    }
+        var x = d3.scaleLinear()
+            .domain([minCases,maxCases])
+            .range([0, xmax])
+        svg.append("g")
+            .attr("transform", "translate(0,"+ymax+")")
+            .call(d3.axisBottom(x))
+            .attr('class', 'xaxis');
+
+        var y = d3.scaleLinear()
+            .domain([maxVaccinations, minVaccination])
+            .range([0, ymax])
+        svg.append("g")
+            .call(d3.axisLeft(y))
+            .attr('class', 'yaxis');
+
+        svg.append('g')
+            .selectAll("dot")
+            .data(list_of_dicts)
+            .enter()
+            .append("circle")
+            .attr("cx", function (d) { return x(d.cases); } )
+            .attr("cy", function (d) { return y(d.vaccinations); } )
+            .attr("r", 5)
+            .style("fill", "purple")
+            .on("mouseover", function (event) {
+                var i = d3.select(this);
+                d3.selectAll("body").append("p").text(i)
+            })
+
+        svg.append("text")
+            .attr("x", xSize/2+50)
+            .attr("y", ymax+40)
+            .attr("text-anchor", "end")
+            .text("Cumulative Number COVID-19 Cases")
+            .style("font-family", "Trebuchet MS")
+
+        svg.append("text")
+            .attr("x", -xmax/2+100)
+            .attr("y", -55)
+            .attr("text-anchor", "end")
+            .attr("transform", "rotate(-90)")
+            .text("Cumulative Number Vaccinations")
+            .style("font-family", "Trebuchet MS")
+    })
+
 	</script>
 </body>
 
