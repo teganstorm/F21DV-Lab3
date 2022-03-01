@@ -204,15 +204,27 @@
         .text("New COVID-19 Cases/Vaccinations")
         .style("font-family", "Trebuchet MS")
 
-        svg.selectAll("rect") 
-        .data(list_of_dicts)
-        .append("rect") 
+
+        var bar = svg.selectAll("bar") 
+          .data(list_of_dicts)
+          .enter()
+          .append("g")
+
+        bar.append("rect") 
         .attr('class', 'bars')
         .attr("x", function(d) { return x(d.continent); })
+        .attr("y", function(d) { return y(d.cases); }) 
+        .attr("width", x.bandwidth()/2)
+        .attr("height", function(d) { return ymax - y(d.cases); }) 
+        .style("fill", "lightblue")
+
+        bar.append("rect") 
+        .attr('class', 'bars')
+        .attr("x", function(d) { return x(d.continent)+x.bandwidth()/2; })
         .attr("y", function(d) { return y(d.gdp); }) 
-        .attr("width", x.bandwidth())
-        .attr("height", function(d) { return y(d.gdp); }) 
-        .style("fill", "purple")
+        .attr("width", x.bandwidth()/2)
+        .attr("height", function(d) { return ymax - y(d.gdp); }) 
+        .style("fill", "lavender")
 
     })
 
