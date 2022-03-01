@@ -18,14 +18,22 @@
 		button {
 			font-family: Trebuchet MS;
 			border: 2px solid black;
-			width: 100px;
+			width: 125px;
 			height: 25px;
-      background-color: lavender;
-      color: black;
+			background-color: lavender;
+			color: black;
 		}
+    div {
+      text-align: center;
+    }
 	</style>
 	<button onclick="window.location.href='index.html'">Back</button>
-  <h1>Is there a relationship between the relative 'wealth' of a population and the evolution of the pandemic?</h1>
+	<h1>Is there a relationship between the relative 'wealth' of a population and the evolution of the pandemic?</h1>
+    <div>
+        <button id="casesButton" onclick="display('New Cases')">New Cases</button>
+        <button id="deathsButton" onclick="display('New Deaths')">New Deaths</button>
+    </div>
+    <p></p>
 	<script>
 		// write your d3 code here..
     /*
@@ -98,11 +106,118 @@
     excess_mortality
     excess_mortality_cumulative_per_million
     */
+
+
+    // working with dates 
+    // http://using-d3js.com/04_04_working_with_dates.html 
+
+
+
     var datalink = "https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv";
-	  d3.csv(datalink).then(function(d) {
-      // do some stuff here
-      
-    })
+
+
+      var xSize = 600;
+      var ySize = 600;
+      var margin = 100;
+      var xmax = xSize-margin*2;
+      var ymax = ySize-margin*2;
+
+      var div = d3.selectAll("body").append("div")
+      var svg = div.append("svg")
+        .attr("width", xSize)
+        .attr("height", ySize)
+        .style("border", "2px solid black")
+        .append("g")
+        .attr("transform", "translate("+margin+","+margin+")");
+
+    var x = d3.scaleLinear()
+        .domain([0,0])
+        .range([0, xmax])
+    svg.append("g")
+        .attr("transform", "translate(0,"+ymax+")")
+        .call(d3.axisBottom(x))
+        .attr('class', 'xaxis');
+
+    var y = d3.scaleLinear()
+        .domain([0, 0])
+        .range([0, ymax])
+    svg.append("g")
+        .call(d3.axisLeft(y))
+        .attr('class', 'yaxis');
+    var da = [
+        {x:0, y:0}
+    ];
+    var line = svg.append("g").append("path")
+        .attr('class', 'line')
+        .datum(da)
+        .attr("fill", "none")
+        .attr("stroke-width", 1.5)
+        .attr("d", d3.line()
+            .x(function(d) { return x(d.x) })
+            .y(function(d) { return y(d.y) })
+        ).attr("stroke", "purple");
+        
+
+    function display(c) {
+      var casesbutton = document.getElementById("casesButton");
+      var deathsbutton = document.getElementById("deathsButton");
+
+      if (c == "New Cases") {
+          casesbutton.style.backgroundColor = "purple";
+          deathsbutton.style.backgroundColor = "lavender";
+
+      } else if (c == "New Deaths") {
+          casesbutton.style.backgroundColor = "lavender";
+          deathsbutton.style.backgroundColor = "purple";
+      } 
+      d3.csv(datalink).then(function(data) {
+          data.sort(function (a,b) {return d3.ascending(a.gdp_per_capita, b.gdp_per_capita);});
+          var gdps = []
+          var yaxis_data = []
+          var datalength = data.length;
+          for (var i=0; i<datalength; i++) {
+              var gdp = data[i].gdp_per_capita;
+              var yaxis_d = 0 
+              if (c == "New Cases") {yaxis_d = data[i].new_cases_per_million; }
+              else if (c == "New Deaths") {yaxis_d = data[i].new_deaths_per_million;}
+              // filter out missing data
+              if (yaxis_d<0) {
+                yaxis_d = yaxis_d*-1;
+              }
+              if (gdp && yaxis_d) {
+                gdps.push(gdp)
+                yaxis_data.push(yaxis_d)
+              }
+          }
+         
+          var mingdp = Math.min.apply(Math, gdps);
+          var maxgdp = Math.max.apply(Math, gdps);
+          var miny = Math.min.apply(Math, yaxis_data);
+          var maxy = Math.max.apply(Math, yaxis_data);
+          
+          var xaxis = d3.selectAll(".xaxis");
+          var yaxis = d3.selectAll(".yaxis");
+          x.domain([mingdp, maxgdp]);
+          xaxis.transition().call(d3.axisBottom(x)) 
+          y.domain([maxy, miny])
+          yaxis.transition().call(d3.axisLeft(y)) 
+          for (var i=0; i<datalength; i++) {
+              var dict = {}
+              dict.x = gdps[i]
+              dict.y = yaxis_data[i]
+              data[i] = dict;
+          }
+
+          newpath = d3.selectAll(".line")
+            .datum(data)
+            .transition()
+            .attr("d", d3.line().x(function(d,i) {
+                return x(d.x);
+            }).y(function(d,i) {
+                return y(d.y);
+            }))
+      })
+    }
 	</script>
 </body>
 
