@@ -30,12 +30,12 @@
 	<button onclick="window.location.href='index.html'">Back</button>
 	<h1>Evolution of COVID-19 over continents and specific countries.</h1>
     <div>
-        <button onclick="display('Asia')">Asia</button>
-        <button onclick="display('Africa')">Africa</button>
-        <button onclick="display('Europe')">Europe</button>
-        <button onclick="display('Oceania')">Oceania</button>
-        <button onclick="display('South America')">South America</button>
-        <button onclick="display('North America')">North America</button>
+        <button id="asiaButton" onclick="display('Asia')">Asia</button>
+        <button id="africaButton" onclick="display('Africa')">Africa</button>
+        <button id="europeButton" onclick="display('Europe')">Europe</button>
+        <button id="oceaniaButton" onclick="display('Oceania')">Oceania</button>
+        <button id="southButton" onclick="display('South America')">South America</button>
+        <button id="northButton" onclick="display('North America')">North America</button>
     </div>
     <p></p>
 	<script>
@@ -157,9 +157,61 @@
         .attr("d", d3.line()
             .x(function(d) { return x(d.x) })
             .y(function(d) { return y(d.y) })
-        ).attr("stroke", "black");
+        ).attr("stroke", "purple");
     
     function display(c) {
+      var asiabutton = document.getElementById("asiaButton");
+      var africabutton = document.getElementById("africaButton");
+      var europebutton = document.getElementById("europeButton");
+      var oceaniabutton = document.getElementById("oceaniaButton");
+      var northbutton = document.getElementById("northButton");
+      var southbutton = document.getElementById("southButton");
+
+      if (c == "Asia") {
+          asiabutton.style.backgroundColor = "purple";
+          africabutton.style.backgroundColor = "lavender";
+          europebutton.style.backgroundColor = "lavender";
+          oceaniabutton.style.backgroundColor = "lavender";
+          northbutton.style.backgroundColor = "lavender";
+          southbutton.style.backgroundColor = "lavender";
+
+      } else if (c == "Africa") {
+          asiabutton.style.backgroundColor = "lavender";
+          africabutton.style.backgroundColor = "purple";
+          europebutton.style.backgroundColor = "lavender";
+          oceaniabutton.style.backgroundColor = "lavender";
+          northbutton.style.backgroundColor = "lavender";
+          southbutton.style.backgroundColor = "lavender";
+      } else if (c == "Europe") {
+          asiabutton.style.backgroundColor = "lavender";
+          africabutton.style.backgroundColor = "lavender";
+          europebutton.style.backgroundColor = "purple";
+          oceaniabutton.style.backgroundColor = "lavender";
+          northbutton.style.backgroundColor = "lavender";
+          southbutton.style.backgroundColor = "lavender";
+      } else if (c == "Oceania") {
+          asiabutton.style.backgroundColor = "lavender";
+          africabutton.style.backgroundColor = "lavender";
+          europebutton.style.backgroundColor = "lavender";
+          oceaniabutton.style.backgroundColor = "purple";
+          northbutton.style.backgroundColor = "lavender";
+          southbutton.style.backgroundColor = "lavender";
+      } else if (c == "South America") {
+          asiabutton.style.backgroundColor = "lavender";
+          africabutton.style.backgroundColor = "lavender";
+          europebutton.style.backgroundColor = "lavender";
+          oceaniabutton.style.backgroundColor = "lavender";
+          northbutton.style.backgroundColor = "lavender";
+          southbutton.style.backgroundColor = "purple";
+      } else if (c == "North America") {
+          asiabutton.style.backgroundColor = "lavender";
+          africabutton.style.backgroundColor = "lavender";
+          europebutton.style.backgroundColor = "lavender";
+          oceaniabutton.style.backgroundColor = "lavender";
+          northbutton.style.backgroundColor = "purple";
+          southbutton.style.backgroundColor = "lavender";
+      }
+
       d3.csv(datalink).then(function(data) {
           data.sort(function (a,b) {return d3.ascending(a.date, b.date);});
           var newdata = []
