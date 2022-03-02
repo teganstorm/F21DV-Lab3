@@ -115,6 +115,7 @@
 
 
     var datalink = "https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv";
+    
 
     d3.csv(datalink).then(function(data) {
         // make a list of dicts of the total gdp and covid cases per million
@@ -128,9 +129,12 @@
             var counter = 0;
             for (var j=0; j<data.length; j++) {
                 if (data[j].continent == continents[i]) {
-                    if (data[j].gdp_per_capita && data[j].new_cases){
+                    if (data[j].gdp_per_capita && data[j].new_cases && data[j].date && data[j].population){
                         dict.gdp = dict.gdp + parseInt(data[j].gdp_per_capita)
-                        dict.cases = dict.cases + parseInt(data[j].new_cases)
+                        
+                        //var population = parseInt(data[j].population)
+                        var caseperpop = parseInt(data[j].new_cases)///population
+                        dict.cases = dict.cases + caseperpop
                         counter = counter + 1;
                     }
                 }
@@ -140,6 +144,8 @@
             list_of_dicts.push(dict)
         }
         list_of_dicts.sort(function (a,b) {return d3.ascending(a.gdp, b.gdp);});
+
+
 
         // get max y axis
         var maxy = list_of_dicts[0].gdp;
@@ -197,11 +203,11 @@
         .style("font-family", "Trebuchet MS")
 
         svg.append("text")
-        .attr("x", -xmax/2+100)
+        .attr("x", -xmax/2+150)
         .attr("y", -55)
         .attr("text-anchor", "end")
         .attr("transform", "rotate(-90)")
-        .text("New COVID-19 Cases/Vaccinations")
+        .text("Average GDP & Average new COVID-19 Cases")
         .style("font-family", "Trebuchet MS")
 
 
@@ -211,25 +217,87 @@
           .append("g")
 
         bar.append("rect") 
-        .attr('class', 'bars')
+        .attr('class', 'barsCASES')
         .attr("x", function(d) { return x(d.continent); })
         .attr("y", function(d) { return y(d.cases); }) 
         .attr("width", x.bandwidth()/2)
         .attr("height", function(d) { return ymax - y(d.cases); }) 
-        .style("fill", "lightblue")
+        .style("fill", "lavender")
 
         bar.append("rect") 
-        .attr('class', 'bars')
+        .attr('class', 'barsGDP')
         .attr("x", function(d) { return x(d.continent)+x.bandwidth()/2; })
         .attr("y", function(d) { return y(d.gdp); }) 
         .attr("width", x.bandwidth()/2)
         .attr("height", function(d) { return ymax - y(d.gdp); }) 
-        .style("fill", "lavender")
-
+        .style("fill", "purple")
+        
     })
+
+    function display(year) {
+        d3.csv(datalink).then(function(data) {
+            var newdata = []
+            for (var i=0; i<data.length; i++) {
+                var curdate = new Date(data[i].date);
+                var curyear = curdate.getFullYear();
+                if (curyear == year) {
+                    newdata.push(data[i])
+                }
+            }
+            var list_of_dicts = []
+            for (var i=0; i<continents.length; i++) {
+                var dict = {};
+                dict.continent = continents[i];
+                dict.gdp = 0;
+                dict.cases = 0;
+                var counter = 0;
+                for (var j=0; j<newdata.length; j++) {
+                    if (newdata[j].continent == continents[i]) {
+                        if (newdata[j].gdp_per_capita && newdata[j].new_cases && newdata[j].date){
+                            dict.gdp = dict.gdp + parseInt(newdata[j].gdp_per_capita)
+                            dict.cases = dict.cases + parseInt(newdata[j].new_cases)
+                            counter = counter + 1;
+                        }
+                    }
+                }
+                dict.gdp = dict.gdp/counter
+                dict.cases = dict.cases/counter
+                list_of_dicts.push(dict)
+            }
+            list_of_dicts.sort(function (a,b) {return d3.ascending(a.gdp, b.gdp);});
+            // get max y axis
+            maxy = list_of_dicts[0].gdp;
+            for (var i=0; i<list_of_dicts.length; i++) {
+                if (list_of_dicts[i].gdp>maxy) {
+                    maxy = list_of_dicts[i].gdp;
+                }
+                if (list_of_dicts[i].cases>maxy) {
+                    maxy = list_of_dicts[i].cases;
+                }
+            }
+            // get the ordered continents (ordered by gdp)
+            continents = d3.map(list_of_dicts, function(d){return(d.continent)})
+
+            // update the axis
+            var xaxis= d3.selectAll(".xaxis")
+            x.domain(list_of_dicts.map(function(d) { return d.continent; }))
+            xaxis.transition().duration(1000).call(d3.axisBottom(x))
+
+            var yaxis = d3.selectAll(".yaxis")
+            y.domain([maxy, 0]);
+            yaxis.transition().duration(1000).call(d3.axisLeft(y));
+            
+            // update the bars
+
+
+            d3.selectAll("body").append("p").text(continents)
+        })
+    }
+
+    display(2022)
 
     
 	</script>
+    
 </body>
-
 </html>
