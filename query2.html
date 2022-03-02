@@ -301,6 +301,48 @@
             .attr("width", x.bandwidth()/2)
             .attr("height", function(d) { return ymax - y(d.gdp); }) 
 
+            // make the value appear over bar on hover:
+            d3.selectAll(".barsGDP")
+                .on("mouseover", function(d, i) {
+                svg.append("text")
+                    .style("font-family", "Trebuchet MS")
+                    .attr('class', 'val')
+                    .attr('x', function() {
+                    return x(i.continent) + x.bandwidth()/2-x.bandwidth()/8;
+                    })
+                    .attr('y', function() {
+                    return y(i.gdp) - 5;
+                    })
+                    .text(function() {
+                        var rounded = Math.round(i.gdp);
+                        return rounded;
+                    })
+                })
+                .on("mouseout", function(d, i) {
+                d3.selectAll('.val').remove()
+                })
+
+            // make the value appear over bar on hover:
+            d3.selectAll(".barsCASES")
+                .on("mouseover", function(d, i) {
+                svg.append("text")
+                    .style("font-family", "Trebuchet MS")
+                    .attr('class', 'val')
+                    .attr('x', function() {
+                    return x(i.continent)-x.bandwidth()/8;
+                    })
+                    .attr('y', function() {
+                    return y(i.cases) - 5;
+                    })
+                    .text(function() {
+                        var rounded = Math.round(i.cases);
+                        return rounded;
+                    })
+                })
+                .on("mouseout", function(d, i) {
+                d3.selectAll('.val').remove()
+                })
+
             //d3.selectAll("body").append("p").text(continents)
         })
     }
