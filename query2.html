@@ -33,7 +33,12 @@
         <button id="2020Button" onclick="display(2020)">2020</button>
         <button id="2021Button" onclick="display(2021)">2021</button>
         <button id="2022Button" onclick="display(2022)">2022</button>
+        <button id="avgButton" onclick="display('Average')">All Years</button>
     </div>
+    <h3><a style="text-decoration: underline;">Key:</a><br>
+        <a style="color:purple">Average GDP Per Capita per year</a><br>
+        <a style="color:lavender">Average New COVID-19 Cases per year</a>
+    </h3>
     <p></p>
 	<script>
 		// write your d3 code here..
@@ -116,51 +121,6 @@
 
     var datalink = "https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv";
     
-
-    d3.csv(datalink).then(function(data) {
-        // make a list of dicts of the total gdp and covid cases per million
-        var continents = ["Asia", "Africa", "Europe", "Oceania", "South America", "North America"]
-        var list_of_dicts = []
-        for (var i=0; i<continents.length; i++) {
-            var dict = {};
-            dict.continent = continents[i];
-            dict.gdp = 0;
-            dict.cases = 0;
-            var counter = 0;
-            for (var j=0; j<data.length; j++) {
-                if (data[j].continent == continents[i]) {
-                    if (data[j].gdp_per_capita && data[j].new_cases && data[j].date && data[j].population){
-                        dict.gdp = dict.gdp + parseInt(data[j].gdp_per_capita)
-                        
-                        //var population = parseInt(data[j].population)
-                        var caseperpop = parseInt(data[j].new_cases)///population
-                        dict.cases = dict.cases + caseperpop
-                        counter = counter + 1;
-                    }
-                }
-            }
-            dict.gdp = dict.gdp/counter
-            dict.cases = dict.cases/counter
-            list_of_dicts.push(dict)
-        }
-        list_of_dicts.sort(function (a,b) {return d3.ascending(a.gdp, b.gdp);});
-
-
-
-        // get max y axis
-        var maxy = list_of_dicts[0].gdp;
-        for (var i=0; i<list_of_dicts.length; i++) {
-            if (list_of_dicts[i].gdp>maxy) {
-                maxy = list_of_dicts[i].gdp;
-            }
-            if (list_of_dicts[i].cases>maxy) {
-                maxy = list_of_dicts[i].cases;
-            }
-        }
-        
-        // get the ordered continents (ordered by gdp)
-        continents = d3.map(list_of_dicts, function(d){return(d.continent)})
-
         // make the svg and graph stuff 
         var xSize = 600;
         var ySize = 600;
@@ -176,6 +136,9 @@
         .append("g")
         .attr("transform", "translate("+margin+","+margin+")");
 
+        list_of_dicts = [
+            {'continent': 0, "gdp":0, "cases":0}, {'continent': 1, "gdp":0, "cases":0}, {'continent': 2, "gdp":0, "cases":0}, {'continent': 3, "gdp":0, "cases":0}, {'continent': 4, "gdp":0, "cases":0}, {'continent': 5, "gdp":0, "cases":0}
+        ]
         var x = d3.scaleBand()
         .domain(list_of_dicts.map(function(d) {
         return d.continent;
@@ -187,6 +150,7 @@
         .call(d3.axisBottom(x))
         .attr('class', 'xaxis');
 
+        var maxy = 0;
         var y = d3.scaleLinear()
         .domain([maxy, 0])
         .range([0, ymax])
@@ -203,11 +167,11 @@
         .style("font-family", "Trebuchet MS")
 
         svg.append("text")
-        .attr("x", -xmax/2+150)
+        .attr("x", -xmax/2+200)
         .attr("y", -55)
         .attr("text-anchor", "end")
         .attr("transform", "rotate(-90)")
-        .text("Average GDP & Average new COVID-19 Cases")
+        .text("Average GDP & Average new COVID-19 Cases per year")
         .style("font-family", "Trebuchet MS")
 
 
@@ -231,20 +195,51 @@
         .attr("width", x.bandwidth()/2)
         .attr("height", function(d) { return ymax - y(d.gdp); }) 
         .style("fill", "purple")
-        
-    })
 
     function display(year) {
+        // buttons 
+        var b2020button = document.getElementById("2020Button");
+        var b2021abutton = document.getElementById("2021Button");
+        var b2022button = document.getElementById("2022Button");
+        var avgbutton = document.getElementById("avgButton");
+
+        if (year == 2020) {
+            b2020button.style.backgroundColor = "purple";
+            b2021abutton.style.backgroundColor = "lavender";
+            b2022button.style.backgroundColor = "lavender";
+            avgbutton.style.backgroundColor = "lavender";
+        } else if (year == 2021) {
+            b2020button.style.backgroundColor = "lavender";
+            b2021abutton.style.backgroundColor = "purple";
+            b2022button.style.backgroundColor = "lavender";
+            avgbutton.style.backgroundColor = "lavender";
+        } else if (year == 2022) {
+            b2020button.style.backgroundColor = "lavender";
+            b2021abutton.style.backgroundColor = "lavender";
+            b2022button.style.backgroundColor = "purple";
+            avgbutton.style.backgroundColor = "lavender";
+        } else if (year == 'Average') {
+            b2020button.style.backgroundColor = "lavender";
+            b2021abutton.style.backgroundColor = "lavender";
+            b2022button.style.backgroundColor = "lavender";
+            avgbutton.style.backgroundColor = "purple";
+        }
+
         d3.csv(datalink).then(function(data) {
             var newdata = []
-            for (var i=0; i<data.length; i++) {
-                var curdate = new Date(data[i].date);
-                var curyear = curdate.getFullYear();
-                if (curyear == year) {
-                    newdata.push(data[i])
+            if (year == 'Average') {
+                newdata = data;
+            } else {
+                for (var i=0; i<data.length; i++) {
+                    var curdate = new Date(data[i].date);
+                    var curyear = curdate.getFullYear();
+                    if (curyear == year) {
+                        newdata.push(data[i])
+                    }
                 }
-            }
-            var list_of_dicts = []
+            } 
+            list_of_dicts = []
+            var continents = ["Asia", "Africa", "Europe", "Oceania", "South America", "North America"]
             for (var i=0; i<continents.length; i++) {
                 var dict = {};
                 dict.continent = continents[i];
@@ -253,7 +248,7 @@
                 var counter = 0;
                 for (var j=0; j<newdata.length; j++) {
                     if (newdata[j].continent == continents[i]) {
-                        if (newdata[j].gdp_per_capita && newdata[j].new_cases && newdata[j].date){
+                        if (newdata[j].gdp_per_capita && newdata[j].new_cases){
                             dict.gdp = dict.gdp + parseInt(newdata[j].gdp_per_capita)
                             dict.cases = dict.cases + parseInt(newdata[j].new_cases)
                             counter = counter + 1;
@@ -287,14 +282,30 @@
             y.domain([maxy, 0]);
             yaxis.transition().duration(1000).call(d3.axisLeft(y));
             
-            // update the bars
 
+            var barsCASES = d3.selectAll(".barsCASES") 
+            .data(list_of_dicts)
+            .transition() 
+            .duration(1000)
+            .attr("x", function(d) { return x(d.continent); })
+            .attr("y", function(d) { return y(d.cases); }) 
+            .attr("width", x.bandwidth()/2)
+            .attr("height", function(d) { return ymax - y(d.cases); }) 
 
-            d3.selectAll("body").append("p").text(continents)
+            var barsGDP = d3.selectAll(".barsGDP") 
+            .data(list_of_dicts)
+            .transition() 
+            .duration(1000)
+            .attr("x", function(d) { return x(d.continent)+x.bandwidth()/2;})
+            .attr("y", function(d) { return y(d.gdp); }) 
+            .attr("width", x.bandwidth()/2)
+            .attr("height", function(d) { return ymax - y(d.gdp); }) 
+
+            //d3.selectAll("body").append("p").text(continents)
         })
     }
 
-    display(2022)
+    display('Average')
 
     
 	</script>
